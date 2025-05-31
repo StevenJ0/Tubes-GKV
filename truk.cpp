@@ -1,5 +1,7 @@
 #include "common.h"
 #include "truk.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 //berisi render buat seluruh bagian truk
 //saat ini truk masih jadi satu objek,
@@ -9,6 +11,44 @@
 
 //redefinition variable collision point
 float cpDepanX, cpDepanZ, cpBelakangX, cpBelakangZ;
+GLuint truckTexture = 0;
+
+// Simple BMP loader for 24-bit BMP files
+unsigned char* loadBMP(const char* filename, int* width, int* height) {
+    FILE* file = fopen(filename, "rb");
+    if (!file) {
+        printf("Error: Cannot open texture file %s\n", filename);
+        return NULL;
+    }
+    unsigned char header[54];
+    fread(header, sizeof(unsigned char), 54, file);
+    *width = *(int*)&header[18];
+    *height = *(int*)&header[22];
+    int dataOffset = *(int*)&header[10];
+    int size = *width * *height * 3;
+    unsigned char* data = (unsigned char*)malloc(size);
+    fseek(file, dataOffset, SEEK_SET);
+    fread(data, 1, size, file);
+    fclose(file);
+    return data;
+}
+
+void loadTruckTexture(const char* filename) {
+    int width, height;
+    unsigned char* data = loadBMP(filename, &width, &height);
+    if (!data) {
+        printf("Failed to load texture: %s\n", filename);
+        return;
+    }
+    glGenTextures(1, &truckTexture);
+    glBindTexture(GL_TEXTURE_2D, truckTexture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_BGR, GL_UNSIGNED_BYTE, data);
+    free(data);
+}
 
 void wheel(float x, float y, float z)
 {
@@ -63,6 +103,34 @@ void wheel(float x, float y, float z)
 
     glPopMatrix();
 }
+
+
+void drawTruckShadow(float posX, float posZ, float rotation) {
+    glPushMatrix();
+    glTranslatef(posX, 0.01f, posZ); // Sedikit di atas permukaan tanah
+    glRotatef(rotation, 0.0f, 1.0f, 0.0f);
+    
+    glDisable(GL_LIGHTING);
+    glColor4f(0.0f, 0.0f, 0.0f, 0.3f); // Warna hitam transparan
+    
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    // Gambar bayangan oval (sesuaikan dengan ukuran truk)
+    glBegin(GL_POLYGON);
+        glVertex3f(-3.0f, 0.0f, -2.0f);
+        glVertex3f(3.0f, 0.0f, -2.0f);
+        glVertex3f(4.0f, 0.0f, 0.0f);
+        glVertex3f(3.0f, 0.0f, 2.0f);
+        glVertex3f(-3.0f, 0.0f, 2.0f);
+        glVertex3f(-4.0f, 0.0f, 0.0f);
+    glEnd();
+    
+    glDisable(GL_BLEND);
+    glEnable(GL_LIGHTING);
+    glPopMatrix();
+}
+
 
 /*posisi 0 = container paling depan (pertama)
 ukuran container pertama lebih pendek dibanding container dibelakangnya*/

@@ -1,11 +1,9 @@
-//TUBES GKV Game Truk
-//Muhammad Afif Azizy / 24060119120011
-//Rahadian Fajar Nugroho / 24060119130075
-//Robertus Agung Setiawan / 24060119130067
-//Merry Tantri Millenia Tobing / 24060119120013
+
 
 #include <windows.h>
 #include "common.h"
+
+
 
 #include "truk.h"
 #include "lantai.h"
@@ -1047,16 +1045,23 @@ void display() {
         }
     }
 
+    // Draw shadow with polygon offset
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    glPolygonOffset(1.0, 1.0);
+    drawTruckShadow(tx, tz, putaranTruk);
+    glDisable(GL_POLYGON_OFFSET_FILL);
+    
+    // Draw truck
     Truk(putaranTruk, tx, ty, tz);
-
-    //display score
+    
+    // Display score
     setOrthographicProjection();
     glPushMatrix();
     glLoadIdentity();
     RenderScore();
     glPopMatrix();
     restorePerspectiveProjection();
-
+    
     glutSwapBuffers();
     glFlush();
     printf("\ntx: %f, tz: %f, setirDitekan: %d, kecepatan: %f, skor: %d", tx, tz, setirDitekan, speedX, skor);
@@ -1107,6 +1112,38 @@ void pressKey(int key, int x, int y) {
         }
     }
 }
+
+void drawBackground() {
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D(0, 800, 0, 600);  // Resolusi layar
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    glDisable(GL_DEPTH_TEST); // Matikan depth supaya background tidak tertutup
+
+    glEnable(GL_TEXTURE_2D);
+    
+
+    glBegin(GL_QUADS);
+    glTexCoord2f(0, 0); glVertex2f(0, 0);
+    glTexCoord2f(1, 0); glVertex2f(800, 0);
+    glTexCoord2f(1, 1); glVertex2f(800, 600);
+    glTexCoord2f(0, 1); glVertex2f(0, 600);
+    glEnd();
+
+    glDisable(GL_TEXTURE_2D);
+    glEnable(GL_DEPTH_TEST);
+
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+}
+
+
 
 void releaseKey(int key, int x, int y) {
     // Fungsi ini akan dijalankan saat tekanan tombol keyboard dilepas
@@ -1174,10 +1211,13 @@ void lighting(){
     glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
     glMaterialfv(GL_FRONT, GL_SHININESS, high_shininess);
 }
-void init(void){
-    glEnable (GL_DEPTH_TEST);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+void init(void) {
+    glEnable(GL_DEPTH_TEST); // Aktifkan depth buffer
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // Isi poligon (bukan wireframe)
+    glEnable(GL_TEXTURE_2D); // Enable texturing
+    loadTruckTexture("textures/truck_texture.bmp"); // Load texture
 }
+
 
 int main(int argc, char **argv){
     glutInit(&argc, argv);
@@ -1185,11 +1225,11 @@ int main(int argc, char **argv){
     glutInitWindowPosition(100,100);
     glutInitWindowSize(640,480);
     glutCreateWindow("Truk");
-    glutIgnoreKeyRepeat(0); // tidak mengabaikan key repeat (saat tombol keyboard dipencet terus)
+    glutIgnoreKeyRepeat(0);
     glutSpecialFunc(pressKey);
     glutSpecialUpFunc(releaseKey);
     glutDisplayFunc(display);
-    glutIdleFunc(display); // Fungsi display-nya dipanggil terusmenerus
+    glutIdleFunc(display);
     glutReshapeFunc(Reshape);
     lighting();
     init();
